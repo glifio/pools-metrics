@@ -3,15 +3,20 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net/http"
 
-	"github.com/glifio/go-pools/constants"
 	"github.com/glifio/pools-metrics/common"
 	m "github.com/glifio/pools-metrics/metrics"
 )
 
-var chainID = big.NewInt(constants.MainnetChainID)
+type MetricsHandlerRes struct {
+	PoolTotalAssets       string `json:"poolTotalAssets"`
+	PoolTotalBorrwed      string `json:"poolTotalBorrowed"`
+	TotalAgentCount       uint64 `json:"totalAgentCount"`
+	TotalMinerCollaterals string `json:"totalMinerCollaterals"`
+	TotalMinersCount      uint64 `json:"totalMinersCount"`
+	TotalValueLocked      string `json:"totalValueLocked"`
+}
 
 func Metrics(w http.ResponseWriter, r *http.Request) {
 	sdk, err := common.NewSDK(r)
@@ -27,7 +32,14 @@ func Metrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(metrics); err != nil {
+	if err := json.NewEncoder(w).Encode(&MetricsHandlerRes{
+		PoolTotalAssets:       metrics.PoolTotalAssets.String(),
+		PoolTotalBorrwed:      metrics.PoolTotalBorrwed.String(),
+		TotalAgentCount:       metrics.TotalAgentCount.Uint64(),
+		TotalMinerCollaterals: metrics.TotalMinerCollaterals.String(),
+		TotalMinersCount:      metrics.TotalMinersCount.Uint64(),
+		TotalValueLocked:      metrics.TotalValueLocked.String(),
+	}); err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding metrics to JSON: %v", err), http.StatusInternalServerError)
 		return
 	}

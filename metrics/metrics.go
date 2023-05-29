@@ -11,7 +11,7 @@ import (
 	"github.com/glifio/go-pools/util"
 )
 
-type TvlHandlerResponse struct {
+type MetricData struct {
 	PoolTotalAssets       *big.Int `json:"poolTotalAssets"`
 	PoolTotalBorrwed      *big.Int `json:"poolTotalBorrowed"`
 	TotalAgentCount       *big.Int `json:"totalAgentCount"`
@@ -20,7 +20,7 @@ type TvlHandlerResponse struct {
 	TotalValueLocked      *big.Int `json:"totalValueLocked"`
 }
 
-func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*TvlHandlerResponse, error) {
+func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 	poolTotalAssetsFloat, err := sdk.Query().InfPoolTotalAssets(ctx)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*TvlHandlerResponse, 
 	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
 	tvl.Sub(tvl, poolTotalBorrowed)
 
-	return &TvlHandlerResponse{
+	return &MetricData{
 		PoolTotalAssets:       poolTotalAssets,
 		PoolTotalBorrwed:      poolTotalBorrowed,
 		TotalAgentCount:       agentCount,
