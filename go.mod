@@ -6,7 +6,9 @@ replace github.com/ipsn/go-secp256k1 v0.0.0-20180726113642-9d62b9f0bc52 => githu
 
 require (
 	github.com/ethereum/go-ethereum v1.11.6
-	github.com/glifio/go-pools v0.0.0-20230527061140-bd9c2f44b82b
+	github.com/filecoin-project/go-address v1.1.0
+	github.com/filecoin-project/lotus v1.23.0
+	github.com/glifio/go-pools v0.0.0-20230529052945-6928e448cb05
 )
 
 require (
@@ -24,7 +26,6 @@ require (
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/filecoin-project/go-address v1.1.0 // indirect
 	github.com/filecoin-project/go-amt-ipld/v2 v2.1.0 // indirect
 	github.com/filecoin-project/go-amt-ipld/v3 v3.1.0 // indirect
 	github.com/filecoin-project/go-amt-ipld/v4 v4.0.0 // indirect
@@ -41,7 +42,6 @@ require (
 	github.com/filecoin-project/go-state-types v0.11.1 // indirect
 	github.com/filecoin-project/go-statemachine v1.0.3 // indirect
 	github.com/filecoin-project/go-statestore v0.2.0 // indirect
-	github.com/filecoin-project/lotus v1.23.0 // indirect
 	github.com/filecoin-project/specs-actors v0.9.15 // indirect
 	github.com/filecoin-project/specs-actors/v2 v2.3.6 // indirect
 	github.com/filecoin-project/specs-actors/v3 v3.1.2 // indirect
