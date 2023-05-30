@@ -32,6 +32,7 @@ func Metrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if err := json.NewEncoder(w).Encode(&MetricsHandlerRes{
 		PoolTotalAssets:       metrics.PoolTotalAssets.String(),
 		PoolTotalBorrwed:      metrics.PoolTotalBorrwed.String(),
