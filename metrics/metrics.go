@@ -33,9 +33,25 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 	}
 	poolTotalBorrowed := util.ToAtto(poolTotalBorrowedFloat)
 
-	agentCount, err := sdk.Query().AgentFactoryAgentCount(ctx)
+	agentCount, minerCount, totalMinerCollaterals, err := MinerCollaterals(ctx, sdk)
+
+	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
+	tvl.Sub(tvl, poolTotalBorrowed)
+
+	return &MetricData{
+		PoolTotalAssets:       poolTotalAssets,
+		PoolTotalBorrwed:      poolTotalBorrowed,
+		TotalAgentCount:       agentCount,
+		TotalMinerCollaterals: totalMinerCollaterals,
+		TotalMinersCount:      minerCount,
+		TotalValueLocked:      tvl,
+	}, nil
+}
+
+func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *big.Int, minerCount *big.Int, minerCollaterals *big.Int, err error) {
+	agentCount, err = sdk.Query().AgentFactoryAgentCount(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	// parallelize calls to the miner registry to get the list of every miner pledged in the system
@@ -50,12 +66,12 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 
 	results, err := util.Multiread(tasks)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	lapi, closer, err := sdk.Extern().ConnectLotusClient()
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	defer closer()
 
@@ -83,23 +99,12 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 
 	bals, err := util.Multiread(tasks)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	var totalMinerCollaterals = big.NewInt(0)
 	for _, bal := range bals {
 		totalMinerCollaterals.Add(totalMinerCollaterals, bal.(*big.Int))
 	}
-
-	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
-	tvl.Sub(tvl, poolTotalBorrowed)
-
-	return &MetricData{
-		PoolTotalAssets:       poolTotalAssets,
-		PoolTotalBorrwed:      poolTotalBorrowed,
-		TotalAgentCount:       agentCount,
-		TotalMinerCollaterals: totalMinerCollaterals,
-		TotalMinersCount:      big.NewInt(int64(len(allMiners))),
-		TotalValueLocked:      tvl,
-	}, nil
+	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, nil
 }
