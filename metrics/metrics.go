@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	pooltypes "github.com/glifio/go-pools/types"
 	"github.com/glifio/go-pools/util"
@@ -83,18 +84,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 
 	tasks = make([]util.TaskFunc, len(allMiners))
 	for i, minerAddr := range allMiners {
-		tasks[i] = func() (interface{}, error) {
-			state, err := lapi.StateReadState(ctx, minerAddr, types.EmptyTSK)
-			if err != nil {
-				return nil, err
-			}
-			bal, ok := new(big.Int).SetString(state.Balance.String(), 10)
-			if !ok {
-				return nil, fmt.Errorf("failed to convert balance to big.Int")
-			}
-
-			return bal, nil
-		}
+		tasks[i] = createStateBalanceTask(ctx, lapi, minerAddr)
 	}
 
 	bals, err := util.Multiread(tasks)
@@ -107,4 +97,20 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 		totalMinerCollaterals.Add(totalMinerCollaterals, bal.(*big.Int))
 	}
 	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, nil
+}
+
+func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr address.Address) util.TaskFunc {
+	return func() (interface{}, error) {
+		state, err := lapi.StateReadState(ctx, addr, types.EmptyTSK)
+		if err != nil {
+			return nil, err
+		}
+
+		bal, ok := new(big.Int).SetString(state.Balance.String(), 10)
+		if !ok {
+			return nil, fmt.Errorf("failed to convert balance to big.Int")
+		}
+
+		return bal, nil
+	}
 }
