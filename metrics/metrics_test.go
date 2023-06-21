@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/filecoin-project/go-address"
 	"github.com/glifio/go-pools/constants"
 	psdk "github.com/glifio/go-pools/sdk"
 	"github.com/glifio/pools-metrics/common"
@@ -36,5 +37,30 @@ func TestMetrics(t *testing.T) {
 	}
 	if metrics.TotalMinersCount.Cmp(big.NewInt(0)) != 1 {
 		t.Fatal("TotalMinersCount should be greater than 0")
+	}
+}
+
+func TestMinerMaxBorrow(t *testing.T) {
+	ctx := context.Background()
+
+	chainID := big.NewInt(constants.MainnetChainID)
+	extern, err := common.GetExtern(chainID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sdk, err := psdk.New(ctx, chainID, extern)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	miner, err := address.NewFromString("f01931245")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err = MinerMaxBorrow(ctx, sdk, miner)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
