@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"strings"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/glifio/go-pools/constants"
@@ -16,6 +17,7 @@ import (
 type MinerMaxBorrowHandler struct {
 	MaxBorrow     string `json:"maxBorrow"`
 	AnnualFeeRate string `json:"annualFeeRate"`
+	Denom         string `json:"denom"`
 }
 
 func MinerMaxBorrow(w http.ResponseWriter, r *http.Request) {
@@ -44,13 +46,34 @@ func MinerMaxBorrow(w http.ResponseWriter, r *http.Request) {
 	// make a rate a percentage
 	filRate.Mul(filRate, big.NewFloat(100))
 
+	var shouldConvert bool = false
+	if strings.ToLower(r.URL.Query().Get("denom")) == "fil" {
+		shouldConvert = true
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if err := json.NewEncoder(w).Encode(&MinerMaxBorrowHandler{
-		MaxBorrow:     maxBorrow.String(),
-		AnnualFeeRate: fmt.Sprintf("%0.03f%%", filRate),
-	}); err != nil {
+	if err := json.NewEncoder(w).Encode(encodeMinerMaxBorrow(maxBorrow, filRate, shouldConvert)); err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding to JSON: %v", err), http.StatusInternalServerError)
 		return
 	}
+}
+
+func encodeMinerMaxBorrow(maxBorrow *big.Int, rate *big.Float, shouldConvert bool) *MinerMaxBorrowHandler {
+	var res *MinerMaxBorrowHandler
+	if !shouldConvert {
+		res = &MinerMaxBorrowHandler{
+			MaxBorrow: maxBorrow.String(),
+			Denom:     "attofil",
+		}
+	} else {
+		res = &MinerMaxBorrowHandler{
+			MaxBorrow: common.FmtFILVal(maxBorrow),
+			Denom:     "fil",
+		}
+	}
+
+	res.AnnualFeeRate = fmt.Sprintf("%0.03f%%", rate)
+
+	return res
 }

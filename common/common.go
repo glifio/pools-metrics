@@ -2,6 +2,7 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -11,6 +12,7 @@ import (
 	psdk "github.com/glifio/go-pools/sdk"
 	"github.com/glifio/go-pools/types"
 	pooltypes "github.com/glifio/go-pools/types"
+	"github.com/glifio/go-pools/util"
 )
 
 // default to mainnet
@@ -70,4 +72,9 @@ func NewSDK(r *http.Request) (pooltypes.PoolsSDK, error) {
 
 	sdk, err := psdk.New(ctx, chainID, extern)
 	return sdk, nil
+}
+
+func FmtFILVal(val *big.Int) string {
+	inFIL := util.ToFIL(val)
+	return fmt.Sprintf("%0.03f", inFIL)
 }
