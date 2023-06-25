@@ -96,6 +96,13 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 	for _, bal := range bals {
 		totalMinerCollaterals.Add(totalMinerCollaterals, bal.(*big.Int))
 	}
+
+	totalIssuedFIL, err := sdk.Query().InfPoolTotalBorrowed(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	totalMinerCollaterals.Sub(totalMinerCollaterals, util.ToAtto(totalIssuedFIL))
+
 	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, nil
 }
 
