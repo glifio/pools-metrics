@@ -15,7 +15,8 @@ import (
 )
 
 type MinerMaxBorrowHandler struct {
-	MaxBorrow     string `json:"maxBorrow"`
+	BorrowStart   string `json:"borrowStart"`
+	BorrowCap     string `json:"borrowCap"`
 	AnnualFeeRate string `json:"annualFeeRate"`
 	Denom         string `json:"denom"`
 }
@@ -33,7 +34,7 @@ func MinerMaxBorrow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maxBorrow, rate, err := m.MinerMaxBorrow(r.Context(), sdk, minerAddr)
+	borrowStart, borrowCap, rate, err := m.MinerMaxBorrow(r.Context(), sdk, minerAddr)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error getting miner max borrow: %v", err), http.StatusInternalServerError)
 		return
@@ -53,23 +54,25 @@ func MinerMaxBorrow(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if err := json.NewEncoder(w).Encode(encodeMinerMaxBorrow(maxBorrow, filRate, shouldConvert)); err != nil {
+	if err := json.NewEncoder(w).Encode(encodeMinerMaxBorrow(borrowStart, borrowCap, filRate, shouldConvert)); err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding to JSON: %v", err), http.StatusInternalServerError)
 		return
 	}
 }
 
-func encodeMinerMaxBorrow(maxBorrow *big.Int, rate *big.Float, shouldConvert bool) *MinerMaxBorrowHandler {
+func encodeMinerMaxBorrow(borrowStart *big.Int, borrowCap *big.Int, rate *big.Float, shouldConvert bool) *MinerMaxBorrowHandler {
 	var res *MinerMaxBorrowHandler
 	if !shouldConvert {
 		res = &MinerMaxBorrowHandler{
-			MaxBorrow: maxBorrow.String(),
-			Denom:     "attofil",
+			BorrowCap:   borrowCap.String(),
+			BorrowStart: borrowStart.String(),
+			Denom:       "attofil",
 		}
 	} else {
 		res = &MinerMaxBorrowHandler{
-			MaxBorrow: common.FmtFILVal(maxBorrow),
-			Denom:     "fil",
+			BorrowCap:   common.FmtFILVal(borrowCap),
+			BorrowStart: common.FmtFILVal(borrowStart),
+			Denom:       "fil",
 		}
 	}
 

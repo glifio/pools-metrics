@@ -59,7 +59,7 @@ func TestMinerMaxBorrow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = MinerMaxBorrow(ctx, sdk, miner)
+	_, _, _, err = MinerMaxBorrow(ctx, sdk, miner)
 	if err != nil {
 		t.Fatal(err)
 	}
