@@ -14,7 +14,15 @@ import (
 	m "github.com/glifio/pools-metrics/metrics"
 )
 
-func MinerMaxBorrow(w http.ResponseWriter, r *http.Request) {
+type MinerInfoHandler struct {
+	BorrowStart          string `json:"borrowStart"`
+	BorrowCap            string `json:"borrowCap"`
+	ExpectedDailyRewards string `json:"expectedDailyRewards"`
+	AnnualFeeRate        string `json:"annualFeeRate"`
+	Denom                string `json:"denom"`
+}
+
+func MinerInfo(w http.ResponseWriter, r *http.Request) {
 	sdk, err := common.NewSDK(r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error initializing PoolsSDK: %v", err), http.StatusBadRequest)
@@ -47,14 +55,13 @@ func MinerMaxBorrow(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if err := json.NewEncoder(w).Encode(encodeMinerInfo(borrowStart, borrowCap, edr, filRate, shouldConvert)); err != nil {
+	if err := json.NewEncoder(w).Encode(EncodeMinerInfo(borrowStart, borrowCap, edr, filRate, shouldConvert)); err != nil {
 		http.Error(w, fmt.Sprintf("Error encoding to JSON: %v", err), http.StatusInternalServerError)
 		return
 	}
 }
 
-// this is a duplicate function because vercel doesn't allow for shared code between these route files
-func encodeMinerInfo(borrowStart *big.Int, borrowCap *big.Int, edr *big.Int, rate *big.Float, shouldConvert bool) *MinerInfoHandler {
+func EncodeMinerInfo(borrowStart *big.Int, borrowCap *big.Int, edr *big.Int, rate *big.Float, shouldConvert bool) *MinerInfoHandler {
 	var res *MinerInfoHandler
 	if !shouldConvert {
 		res = &MinerInfoHandler{

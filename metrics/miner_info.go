@@ -11,31 +11,31 @@ import (
 	"github.com/glifio/go-pools/vc"
 )
 
-func MinerMaxBorrow(ctx context.Context, sdk pooltypes.PoolsSDK, miner address.Address) (*big.Int, *big.Int, *big.Int, error) {
+func MinerInfo(ctx context.Context, sdk pooltypes.PoolsSDK, miner address.Address) (*big.Int, *big.Int, *big.Int, *big.Int, error) {
 	lapi, closer, err := sdk.Extern().ConnectLotusClient()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	defer closer()
 
 	ts, err := sdk.Query().ChainHead(ctx)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	edr, err := mstat.ComputeEDRLazy1(ctx, miner, ts, lapi)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	agentValue, err := lapi.WalletBalance(ctx, miner)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	agentVal, ok := new(big.Int).SetString(agentValue.String(), 10)
 	if !ok {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	agentData := &vc.AgentData{
@@ -53,13 +53,13 @@ func MinerMaxBorrow(ctx context.Context, sdk pooltypes.PoolsSDK, miner address.A
 
 	nullishCred, err := vc.NullishVerifiableCredential(*agentData)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	rate, err := sdk.Query().InfPoolGetRate(ctx, *nullishCred)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	return psdk.MaxBorrowFromAgentData(agentData, rate), agentVal, rate, nil
+	return psdk.MaxBorrowFromAgentData(agentData, rate), agentVal, edr, rate, nil
 }
