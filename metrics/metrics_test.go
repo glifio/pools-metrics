@@ -40,6 +40,26 @@ func TestMetrics(t *testing.T) {
 	}
 }
 
+func TestAgentsLiquidAssets(t *testing.T) {
+	ctx := context.Background()
+
+	chainID := big.NewInt(constants.MainnetChainID)
+	extern, err := common.GetExtern(chainID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sdk, err := psdk.New(ctx, chainID, extern)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = AgentsLiquidAssets(ctx, sdk)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestMinerMaxBorrow(t *testing.T) {
 	ctx := context.Background()
 

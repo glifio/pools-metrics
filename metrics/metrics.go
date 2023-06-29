@@ -2,9 +2,13 @@ package metrics
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/big"
+	"net/http"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
@@ -47,6 +51,47 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 		TotalMinersCount:      minerCount,
 		TotalValueLocked:      tvl,
 	}, nil
+}
+
+func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, error) {
+	resp, err := http.Get("http://events.glif.link/agent/list")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var data []struct {
+		TxHash  string         `json:"txHash"`
+		ID      string         `json:"id"`
+		Address common.Address `json:"address"`
+		Height  *big.Int       `json:"height"`
+	}
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	tasks := make([]util.TaskFunc, len(data))
+	for i, agent := range data {
+		tasks[i] = createAgentLiquidAssetTask(ctx, sdk, agent.Address)
+	}
+
+	agentsLiquidAssets, err := util.Multiread(tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	var totalAgentLiquidAssets = big.NewInt(0)
+	for _, assets := range agentsLiquidAssets {
+		totalAgentLiquidAssets.Add(totalAgentLiquidAssets, assets.(*big.Int))
+	}
+
+	return totalAgentLiquidAssets, nil
 }
 
 func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *big.Int, minerCount *big.Int, minerCollaterals *big.Int, err error) {
@@ -103,6 +148,13 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 	}
 	totalMinerCollaterals.Sub(totalMinerCollaterals, util.ToAtto(totalIssuedFIL))
 
+	// count the assets held on agents as miner collaterals
+	agentsLiquidAssets, err := AgentsLiquidAssets(ctx, sdk)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	totalMinerCollaterals.Add(totalMinerCollaterals, agentsLiquidAssets)
+
 	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, nil
 }
 
@@ -119,5 +171,11 @@ func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr 
 		}
 
 		return bal, nil
+	}
+}
+
+func createAgentLiquidAssetTask(ctx context.Context, sdk pooltypes.PoolsSDK, agentAddr common.Address) util.TaskFunc {
+	return func() (interface{}, error) {
+		return sdk.Query().AgentLiquidAssets(ctx, agentAddr)
 	}
 }
