@@ -54,7 +54,7 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 }
 
 func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, error) {
-	resp, err := http.Get("http://events.glif.link/agent/list")
+	resp, err := http.Get("https://events.glif.link/agent/list")
 	if err != nil {
 		return nil, err
 	}
