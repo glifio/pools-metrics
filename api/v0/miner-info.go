@@ -18,6 +18,7 @@ type MinerInfoHandler struct {
 	BorrowStart          string `json:"borrowStart"`
 	BorrowCap            string `json:"borrowCap"`
 	ExpectedDailyRewards string `json:"expectedDailyRewards"`
+	Equity               string `json:"equity"`
 	AnnualFeeRate        string `json:"annualFeeRate"`
 	Denom                string `json:"denom"`
 }
@@ -68,6 +69,7 @@ func EncodeMinerInfo(borrowStart *big.Int, borrowCap *big.Int, edr *big.Int, rat
 			BorrowCap:            borrowCap.String(),
 			BorrowStart:          borrowStart.String(),
 			ExpectedDailyRewards: edr.String(),
+			Equity:               borrowCap.String(),
 			Denom:                "attofil",
 		}
 	} else {
@@ -75,6 +77,7 @@ func EncodeMinerInfo(borrowStart *big.Int, borrowCap *big.Int, edr *big.Int, rat
 			BorrowCap:            common.FmtFILVal(borrowCap),
 			BorrowStart:          common.FmtFILVal(borrowStart),
 			ExpectedDailyRewards: common.FmtFILVal(edr),
+			Equity:               common.FmtFILVal(borrowCap),
 			Denom:                "fil",
 		}
 	}
