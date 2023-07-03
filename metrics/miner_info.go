@@ -28,6 +28,14 @@ func MinerInfo(ctx context.Context, sdk pooltypes.PoolsSDK, miner address.Addres
 		return nil, nil, nil, nil, err
 	}
 
+	minerstat, err := mstat.ComputeMinerStats(ctx, miner, ts, lapi)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	dayVest := new(big.Int).Div(minerstat.VestingFunds, big.NewInt(180))
+	edr = new(big.Int).Add(edr, dayVest)
+
 	agentValue, err := lapi.WalletBalance(ctx, miner)
 	if err != nil {
 		return nil, nil, nil, nil, err
