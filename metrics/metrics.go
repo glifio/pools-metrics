@@ -41,7 +41,6 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 	agentCount, minerCount, totalMinerCollaterals, err := MinerCollaterals(ctx, sdk)
 
 	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
-	tvl.Sub(tvl, poolTotalBorrowed)
 
 	return &MetricData{
 		PoolTotalAssets:       poolTotalAssets,
