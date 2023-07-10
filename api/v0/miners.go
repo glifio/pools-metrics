@@ -22,7 +22,13 @@ func Miners(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	minerCount, miners, err := m.Miners(r.Context(), sdk)
+	blockNumber, err := common.GetBlockNumberQP(r)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error getting block number: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	minerCount, miners, err := m.Miners(r.Context(), sdk, blockNumber)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error getting miners: %v", err), http.StatusInternalServerError)
 		return
