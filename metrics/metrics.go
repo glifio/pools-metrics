@@ -121,9 +121,14 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 	}
 	defer closer()
 
-	ts, err := lapi.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(blockNumber.Int64()), types.EmptyTSK)
-	if err != nil {
-		return nil, nil, nil, err
+	var tsk types.TipSetKey = types.EmptyTSK
+
+	if blockNumber != nil {
+		ts, err := lapi.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(blockNumber.Int64()), types.EmptyTSK)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		tsk = ts.Key()
 	}
 
 	var allMiners []address.Address
@@ -134,7 +139,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 
 	tasks = make([]util.TaskFunc, len(allMiners))
 	for i, minerAddr := range allMiners {
-		tasks[i] = createStateBalanceTask(ctx, lapi, minerAddr, ts.Key())
+		tasks[i] = createStateBalanceTask(ctx, lapi, minerAddr, tsk)
 	}
 
 	bals, err := util.Multiread(tasks)
