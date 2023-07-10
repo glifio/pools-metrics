@@ -81,7 +81,7 @@ func FmtFILVal(val *big.Int) string {
 
 func GetBlockNumberQP(r *http.Request) (*big.Int, error) {
 	var blockNumber *big.Int = nil
-	blockNumStr := r.URL.Query().Get("blockNumber")
+	blockNumStr := r.URL.Query().Get("blocknumber")
 	if blockNumStr != "" {
 		bn, ok := new(big.Int).SetString(blockNumStr, 10)
 		if !ok {
