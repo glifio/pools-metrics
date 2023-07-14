@@ -38,16 +38,6 @@ func TestMetrics(t *testing.T) {
 	if metrics.TotalMinersCount.Cmp(big.NewInt(0)) != 1 {
 		t.Fatal("TotalMinersCount should be greater than 0")
 	}
-	if metrics.TotalMinersSectors.Cmp(big.NewInt(0)) != 1 {
-		t.Fatal("TotalMinersSectors should be greater than 0")
-	}
-	if metrics.TotalMinerQAP.Cmp(big.NewInt(0)) != 1 {
-		t.Fatal("TotalMinerQAP should be greater than 0")
-	}
-	if metrics.TotalMinerRBP.Cmp(big.NewInt(0)) != 1 {
-		t.Fatal("TotalMinerRBP should be greater than 0")
-	}
-
 }
 
 func TestAgentsLiquidAssets(t *testing.T) {
