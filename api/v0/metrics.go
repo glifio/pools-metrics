@@ -16,9 +16,13 @@ type MetricsHandlerRes struct {
 	TotalAgentCount       uint64 `json:"totalAgentCount"`
 	TotalMinerCollaterals string `json:"totalMinerCollaterals"`
 	TotalMinersCount      uint64 `json:"totalMinersCount"`
+	TotalMinersSectors    string `json:"totalMinersSectors"`
+	TotalMinerQAP         string `json:"totalMinerQAP"`
+	TotalMinerRBP         string `json:"totalMinerRBP"`
 	TotalValueLocked      string `json:"totalValueLocked"`
-	Denom                 string `json:"denom"`
-	BlockNumber           uint64 `json:"blockNumber"`
+
+	Denom       string `json:"denom"`
+	BlockNumber uint64 `json:"blockNumber"`
 }
 
 func Metrics(w http.ResponseWriter, r *http.Request) {
