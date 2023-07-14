@@ -18,6 +18,7 @@ type MetricsHandlerRes struct {
 	TotalMinersCount      uint64 `json:"totalMinersCount"`
 	TotalValueLocked      string `json:"totalValueLocked"`
 	Denom                 string `json:"denom"`
+	BlockNumber           uint64 `json:"blockNumber"`
 }
 
 func Metrics(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +33,13 @@ func Metrics(w http.ResponseWriter, r *http.Request) {
 		shouldConvert = true
 	}
 
-	metrics, err := m.Metrics(r.Context(), sdk)
+	blockNumber, err := common.GetBlockNumberQP(r)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error getting block number: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	metrics, err := m.Metrics(r.Context(), sdk, blockNumber)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error getting metrics: %v", err), http.StatusInternalServerError)
 		return

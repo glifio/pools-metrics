@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	pooltypes "github.com/glifio/go-pools/types"
@@ -25,20 +26,20 @@ type MetricData struct {
 	TotalValueLocked      *big.Int `json:"totalValueLocked"`
 }
 
-func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
-	poolTotalAssetsFloat, err := sdk.Query().InfPoolTotalAssets(ctx)
+func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (*MetricData, error) {
+	poolTotalAssetsFloat, err := sdk.Query().InfPoolTotalAssets(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
 	poolTotalAssets := util.ToAtto(poolTotalAssetsFloat)
 
-	poolTotalBorrowedFloat, err := sdk.Query().InfPoolTotalBorrowed(ctx)
+	poolTotalBorrowedFloat, err := sdk.Query().InfPoolTotalBorrowed(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
 	poolTotalBorrowed := util.ToAtto(poolTotalBorrowedFloat)
 
-	agentCount, minerCount, totalMinerCollaterals, err := MinerCollaterals(ctx, sdk)
+	agentCount, minerCount, totalMinerCollaterals, err := MinerCollaterals(ctx, sdk, blockNumber)
 
 	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
 
@@ -52,7 +53,7 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK) (*MetricData, error) {
 	}, nil
 }
 
-func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, error) {
+func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (*big.Int, error) {
 	resp, err := http.Get("https://events.glif.link/agent/list")
 	if err != nil {
 		return nil, err
@@ -77,7 +78,7 @@ func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, 
 
 	tasks := make([]util.TaskFunc, len(data))
 	for i, agent := range data {
-		tasks[i] = createAgentLiquidAssetTask(ctx, sdk, agent.Address)
+		tasks[i] = createAgentLiquidAssetTask(ctx, sdk, agent.Address, blockNumber)
 	}
 
 	agentsLiquidAssets, err := util.Multiread(tasks)
@@ -93,8 +94,8 @@ func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, 
 	return totalAgentLiquidAssets, nil
 }
 
-func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *big.Int, minerCount *big.Int, minerCollaterals *big.Int, err error) {
-	agentCount, err = sdk.Query().AgentFactoryAgentCount(ctx)
+func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (agentCount *big.Int, minerCount *big.Int, minerCollaterals *big.Int, err error) {
+	agentCount, err = sdk.Query().AgentFactoryAgentCount(ctx, blockNumber)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -105,7 +106,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 		index := big.NewInt(i + 1)
 		tasks[i] = func() (interface{}, error) {
 			// add one to the index because the agent ids start at 1
-			return sdk.Query().MinerRegistryAgentMinersList(nil, index)
+			return sdk.Query().MinerRegistryAgentMinersList(ctx, index, blockNumber)
 		}
 	}
 
@@ -120,6 +121,16 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 	}
 	defer closer()
 
+	var tsk types.TipSetKey = types.EmptyTSK
+
+	if blockNumber != nil {
+		ts, err := lapi.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(blockNumber.Int64()), types.EmptyTSK)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		tsk = ts.Key()
+	}
+
 	var allMiners []address.Address
 	for _, result := range results {
 		agentMiners := result.([]address.Address)
@@ -128,7 +139,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 
 	tasks = make([]util.TaskFunc, len(allMiners))
 	for i, minerAddr := range allMiners {
-		tasks[i] = createStateBalanceTask(ctx, lapi, minerAddr)
+		tasks[i] = createStateBalanceTask(ctx, lapi, minerAddr, tsk)
 	}
 
 	bals, err := util.Multiread(tasks)
@@ -141,14 +152,14 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 		totalMinerCollaterals.Add(totalMinerCollaterals, bal.(*big.Int))
 	}
 
-	totalIssuedFIL, err := sdk.Query().InfPoolTotalBorrowed(ctx)
+	totalIssuedFIL, err := sdk.Query().InfPoolTotalBorrowed(ctx, blockNumber)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	totalMinerCollaterals.Sub(totalMinerCollaterals, util.ToAtto(totalIssuedFIL))
 
 	// count the assets held on agents as miner collaterals
-	agentsLiquidAssets, err := AgentsLiquidAssets(ctx, sdk)
+	agentsLiquidAssets, err := AgentsLiquidAssets(ctx, sdk, blockNumber)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -157,9 +168,9 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK) (agentCount *
 	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, nil
 }
 
-func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr address.Address) util.TaskFunc {
+func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr address.Address, tsk types.TipSetKey) util.TaskFunc {
 	return func() (interface{}, error) {
-		state, err := lapi.StateReadState(ctx, addr, types.EmptyTSK)
+		state, err := lapi.StateReadState(ctx, addr, tsk)
 		if err != nil {
 			return nil, err
 		}
@@ -173,8 +184,8 @@ func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr 
 	}
 }
 
-func createAgentLiquidAssetTask(ctx context.Context, sdk pooltypes.PoolsSDK, agentAddr common.Address) util.TaskFunc {
+func createAgentLiquidAssetTask(ctx context.Context, sdk pooltypes.PoolsSDK, agentAddr common.Address, blockNumber *big.Int) util.TaskFunc {
 	return func() (interface{}, error) {
-		return sdk.Query().AgentLiquidAssets(ctx, agentAddr)
+		return sdk.Query().AgentLiquidAssets(ctx, agentAddr, blockNumber)
 	}
 }

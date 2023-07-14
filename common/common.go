@@ -78,3 +78,17 @@ func FmtFILVal(val *big.Int) string {
 	inFIL := util.ToFIL(val)
 	return fmt.Sprintf("%0.03f", inFIL)
 }
+
+func GetBlockNumberQP(r *http.Request) (*big.Int, error) {
+	var blockNumber *big.Int = nil
+	blockNumStr := r.URL.Query().Get("blocknumber")
+	if blockNumStr != "" {
+		bn, ok := new(big.Int).SetString(blockNumStr, 10)
+		if !ok {
+			return nil, errors.New("Error parsing blockNumber")
+		}
+		blockNumber = bn
+	}
+
+	return blockNumber, nil
+}

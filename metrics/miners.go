@@ -9,8 +9,8 @@ import (
 	"github.com/glifio/go-pools/util"
 )
 
-func Miners(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, []address.Address, error) {
-	agentCount, err := sdk.Query().AgentFactoryAgentCount(ctx)
+func Miners(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (*big.Int, []address.Address, error) {
+	agentCount, err := sdk.Query().AgentFactoryAgentCount(ctx, blockNumber)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -21,7 +21,7 @@ func Miners(ctx context.Context, sdk pooltypes.PoolsSDK) (*big.Int, []address.Ad
 		index := big.NewInt(i + 1)
 		tasks[i] = func() (interface{}, error) {
 			// add one to the index because the agent ids start at 1
-			return sdk.Query().MinerRegistryAgentMinersList(nil, index)
+			return sdk.Query().MinerRegistryAgentMinersList(ctx, index, blockNumber)
 		}
 	}
 

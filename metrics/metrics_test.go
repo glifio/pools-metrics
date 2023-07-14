@@ -18,7 +18,7 @@ func TestMetrics(t *testing.T) {
 	extern, err := common.GetExtern(chainID)
 
 	sdk, err := psdk.New(ctx, chainID, extern)
-	metrics, err := Metrics(ctx, sdk)
+	metrics, err := Metrics(ctx, sdk, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestAgentsLiquidAssets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = AgentsLiquidAssets(ctx, sdk)
+	_, err = AgentsLiquidAssets(ctx, sdk, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

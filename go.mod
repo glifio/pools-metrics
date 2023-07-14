@@ -8,7 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/filecoin-project/go-address v1.1.0
 	github.com/filecoin-project/lotus v1.23.0
-	github.com/glifio/go-pools v0.0.0-20230703041924-bd6e5f185fec
+	github.com/glifio/go-pools v0.0.0-20230710232100-09bafaf3f04e
 )
 
 require (
