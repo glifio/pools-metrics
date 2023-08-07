@@ -26,7 +26,7 @@ func TestMetrics(t *testing.T) {
 	if metrics.PoolTotalAssets.Cmp(big.NewInt(0)) != 1 {
 		t.Fatal("PoolTotalAssets should be greater than 0")
 	}
-	if metrics.PoolTotalBorrwed.Cmp(big.NewInt(0)) != 1 {
+	if metrics.PoolTotalBorrowed.Cmp(big.NewInt(0)) != 1 {
 		t.Fatal("PoolTotalBorrwed should be greater than 0")
 	}
 	if metrics.TotalAgentCount.Cmp(big.NewInt(0)) != 1 {

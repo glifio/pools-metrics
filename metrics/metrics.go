@@ -18,15 +18,17 @@ import (
 )
 
 type MetricData struct {
-	PoolTotalAssets       *big.Int `json:"poolTotalAssets"`
-	PoolTotalBorrwed      *big.Int `json:"poolTotalBorrowed"`
-	TotalAgentCount       *big.Int `json:"totalAgentCount"`
-	TotalMinerCollaterals *big.Int `json:"totalMinerCollaterals"`
-	TotalMinersCount      *big.Int `json:"totalMinersCount"`
-	TotalValueLocked      *big.Int `json:"totalValueLocked"`
-	TotalMinersSectors    *big.Int `json:"totalMinersSectors"`
-	TotalMinerQAP         *big.Int `json:"totalMinerQAP"`
-	TotalMinerRBP         *big.Int `json:"totalMinerRBP"`
+	PoolTotalAssets           *big.Int `json:"poolTotalAssets"`
+	PoolTotalBorrowed         *big.Int `json:"poolTotalBorrowed"`
+	PoolTotalBorrowableAssets *big.Int `json:"poolTotalBorrowableAssets"`
+	PoolExitReserve           *big.Int `json:"poolExitReserve"`
+	TotalAgentCount           *big.Int `json:"totalAgentCount"`
+	TotalMinerCollaterals     *big.Int `json:"totalMinerCollaterals"`
+	TotalMinersCount          *big.Int `json:"totalMinersCount"`
+	TotalValueLocked          *big.Int `json:"totalValueLocked"`
+	TotalMinersSectors        *big.Int `json:"totalMinersSectors"`
+	TotalMinerQAP             *big.Int `json:"totalMinerQAP"`
+	TotalMinerRBP             *big.Int `json:"totalMinerRBP"`
 }
 
 func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (*MetricData, error) {
@@ -35,39 +37,60 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) 
 		return nil, err
 	}
 	poolTotalAssets := util.ToAtto(poolTotalAssetsFloat)
+	fmt.Println("poolTotalAssets", poolTotalAssets)
+
+	poolTotalBorrowable, err := sdk.Query().InfPoolBorrowableLiquidity(ctx, blockNumber)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("poolTotalBorrowable", poolTotalBorrowable)
+
+	poolExitReservesFloat, err := sdk.Query().InfPoolExitReserve(ctx, blockNumber)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("poolExitReservesFloat", poolExitReservesFloat)
 
 	poolTotalBorrowedFloat, err := sdk.Query().InfPoolTotalBorrowed(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
 	poolTotalBorrowed := util.ToAtto(poolTotalBorrowedFloat)
+	fmt.Println("poolTotalBorrowed", poolTotalBorrowed)
 
 	agentCount, minerCount, totalMinerCollaterals, totalMinerSectors, totalMinerQAP, totalMinerRBP, err := MinerCollaterals(ctx, sdk, blockNumber)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("agentCount", agentCount)
 
 	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
+	fmt.Println("tvl", tvl)
 
 	return &MetricData{
-		PoolTotalAssets:       poolTotalAssets,
-		PoolTotalBorrwed:      poolTotalBorrowed,
-		TotalAgentCount:       agentCount,
-		TotalMinerCollaterals: totalMinerCollaterals,
-		TotalMinersCount:      minerCount,
-		TotalMinersSectors:    totalMinerSectors,
-		TotalMinerQAP:         totalMinerQAP,
-		TotalMinerRBP:         totalMinerRBP,
-		TotalValueLocked:      tvl,
+		PoolTotalAssets:           poolTotalAssets,
+		PoolTotalBorrowed:         poolTotalBorrowed,
+		PoolTotalBorrowableAssets: util.ToAtto(poolTotalBorrowable),
+		PoolExitReserve:           util.ToAtto(poolExitReservesFloat),
+		TotalAgentCount:           agentCount,
+		TotalMinerCollaterals:     totalMinerCollaterals,
+		TotalMinersCount:          minerCount,
+		TotalMinersSectors:        totalMinerSectors,
+		TotalMinerQAP:             totalMinerQAP,
+		TotalMinerRBP:             totalMinerRBP,
+		TotalValueLocked:          tvl,
 	}, nil
 }
 
 func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (*big.Int, error) {
 	resp, err := http.Get("https://events.glif.link/agent/list")
+	fmt.Println("YOOerr", err)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	fmt.Println("resp", resp)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -109,6 +132,8 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 		return nil, nil, nil, nil, nil, nil, err
 	}
 
+	fmt.Println("agentCount", agentCount)
+
 	// parallelize calls to the miner registry to get the list of every miner pledged in the system
 	tasks := make([]util.TaskFunc, agentCount.Int64())
 	for i := int64(0); i < agentCount.Int64(); i++ {
@@ -131,7 +156,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 	defer closer()
 
 	var tsk types.TipSetKey = types.EmptyTSK
-
+	fmt.Println("HIII")
 	if blockNumber != nil {
 		ts, err := lapi.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(blockNumber.Int64()), types.EmptyTSK)
 		if err != nil {
@@ -139,6 +164,8 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 		}
 		tsk = ts.Key()
 	}
+
+	fmt.Println("YOOO")
 
 	var allMiners []address.Address
 	for _, result := range results {
@@ -170,7 +197,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
-
+	fmt.Println("YOOO2")
 	totalMinerSectors = big.NewInt(0)
 	totalMinerQAP = big.NewInt(0)
 	totalMinerRBP = big.NewInt(0)
@@ -181,25 +208,28 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 		totalMinerRBP.Add(totalMinerRBP, minerSectorPow.rbp)
 	}
 
+	fmt.Println("YOOO3")
+
 	totalIssuedFIL, err := sdk.Query().InfPoolTotalBorrowed(ctx, blockNumber)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
 	totalMinerCollaterals.Sub(totalMinerCollaterals, util.ToAtto(totalIssuedFIL))
-
+	fmt.Println("YOOOO4")
 	// count the assets held on agents as miner collaterals
 	agentsLiquidAssets, err := AgentsLiquidAssets(ctx, sdk, blockNumber)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
 	totalMinerCollaterals.Add(totalMinerCollaterals, agentsLiquidAssets)
-
+	fmt.Println("YOOOO5")
 	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, totalMinerSectors, totalMinerQAP, totalMinerRBP, nil
 }
 
 func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr address.Address, tsk types.TipSetKey) util.TaskFunc {
 	return func() (interface{}, error) {
 		state, err := lapi.StateReadState(ctx, addr, tsk)
+		fmt.Println("er1r", err)
 		if err != nil {
 			return nil, err
 		}
@@ -233,6 +263,7 @@ func createSectorPowerTask(ctx context.Context, lapi *api.FullNodeStruct, addr a
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("er2", err)
 
 		return &MinerSectorsPower{
 			miner:   addr,
