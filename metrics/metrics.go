@@ -223,7 +223,6 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 func createStateBalanceTask(ctx context.Context, lapi *api.FullNodeStruct, addr address.Address, tsk types.TipSetKey) util.TaskFunc {
 	return func() (interface{}, error) {
 		state, err := lapi.StateReadState(ctx, addr, tsk)
-		fmt.Println("er1r", err)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +256,6 @@ func createSectorPowerTask(ctx context.Context, lapi *api.FullNodeStruct, addr a
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("er2", err)
 
 		return &MinerSectorsPower{
 			miner:   addr,
