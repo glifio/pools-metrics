@@ -37,35 +37,29 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) 
 		return nil, err
 	}
 	poolTotalAssets := util.ToAtto(poolTotalAssetsFloat)
-	fmt.Println("poolTotalAssets", poolTotalAssets)
 
 	poolTotalBorrowable, err := sdk.Query().InfPoolBorrowableLiquidity(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("poolTotalBorrowable", poolTotalBorrowable)
 
 	poolExitReservesFloat, err := sdk.Query().InfPoolExitReserve(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("poolExitReservesFloat", poolExitReservesFloat)
 
 	poolTotalBorrowedFloat, err := sdk.Query().InfPoolTotalBorrowed(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
 	poolTotalBorrowed := util.ToAtto(poolTotalBorrowedFloat)
-	fmt.Println("poolTotalBorrowed", poolTotalBorrowed)
 
 	agentCount, minerCount, totalMinerCollaterals, totalMinerSectors, totalMinerQAP, totalMinerRBP, err := MinerCollaterals(ctx, sdk, blockNumber)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("agentCount", agentCount)
 
 	tvl := new(big.Int).Add(poolTotalAssets, totalMinerCollaterals)
-	fmt.Println("tvl", tvl)
 
 	return &MetricData{
 		PoolTotalAssets:           poolTotalAssets,
@@ -88,8 +82,6 @@ func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("resp", resp)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -130,8 +122,6 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
-
-	fmt.Println("agentCount", agentCount)
 
 	// parallelize calls to the miner registry to get the list of every miner pledged in the system
 	tasks := make([]util.TaskFunc, agentCount.Int64())
