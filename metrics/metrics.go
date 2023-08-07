@@ -84,7 +84,6 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) 
 
 func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) (*big.Int, error) {
 	resp, err := http.Get("https://events.glif.link/agent/list")
-	fmt.Println("YOOerr", err)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +155,6 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 	defer closer()
 
 	var tsk types.TipSetKey = types.EmptyTSK
-	fmt.Println("HIII")
 	if blockNumber != nil {
 		ts, err := lapi.ChainGetTipSetByHeight(ctx, abi.ChainEpoch(blockNumber.Int64()), types.EmptyTSK)
 		if err != nil {
@@ -164,8 +162,6 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 		}
 		tsk = ts.Key()
 	}
-
-	fmt.Println("YOOO")
 
 	var allMiners []address.Address
 	for _, result := range results {
@@ -197,7 +193,7 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
-	fmt.Println("YOOO2")
+
 	totalMinerSectors = big.NewInt(0)
 	totalMinerQAP = big.NewInt(0)
 	totalMinerRBP = big.NewInt(0)
@@ -208,21 +204,19 @@ func MinerCollaterals(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *
 		totalMinerRBP.Add(totalMinerRBP, minerSectorPow.rbp)
 	}
 
-	fmt.Println("YOOO3")
-
 	totalIssuedFIL, err := sdk.Query().InfPoolTotalBorrowed(ctx, blockNumber)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
 	totalMinerCollaterals.Sub(totalMinerCollaterals, util.ToAtto(totalIssuedFIL))
-	fmt.Println("YOOOO4")
+
 	// count the assets held on agents as miner collaterals
 	agentsLiquidAssets, err := AgentsLiquidAssets(ctx, sdk, blockNumber)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
 	totalMinerCollaterals.Add(totalMinerCollaterals, agentsLiquidAssets)
-	fmt.Println("YOOOO5")
+
 	return agentCount, big.NewInt(int64(len(allMiners))), totalMinerCollaterals, totalMinerSectors, totalMinerQAP, totalMinerRBP, nil
 }
 
