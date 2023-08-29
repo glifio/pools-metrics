@@ -43,7 +43,7 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) 
 		return nil, err
 	}
 
-	poolExitReservesFloat, err := sdk.Query().InfPoolExitReserve(ctx, blockNumber)
+	poolExitReserves, _, err := sdk.Query().InfPoolExitReserve(ctx, blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func Metrics(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber *big.Int) 
 		PoolTotalAssets:           poolTotalAssets,
 		PoolTotalBorrowed:         poolTotalBorrowed,
 		PoolTotalBorrowableAssets: util.ToAtto(poolTotalBorrowable),
-		PoolExitReserve:           util.ToAtto(poolExitReservesFloat),
+		PoolExitReserve:           poolExitReserves,
 		TotalAgentCount:           agentCount,
 		TotalMinerCollaterals:     totalMinerCollaterals,
 		TotalMinersCount:          minerCount,
