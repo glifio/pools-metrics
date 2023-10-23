@@ -2,6 +2,8 @@ module github.com/glifio/pools-metrics
 
 go 1.20
 
+replace github.com/glifio/go-pools v0.0.0-20230904034119-e659a0542cc1 => ../go-pools
+
 replace github.com/ipsn/go-secp256k1 v0.0.0-20180726113642-9d62b9f0bc52 => github.com/glifio/go-secp256k1 v0.0.1
 
 require (
@@ -9,7 +11,7 @@ require (
 	github.com/filecoin-project/go-address v1.1.0
 	github.com/filecoin-project/go-state-types v0.11.1
 	github.com/filecoin-project/lotus v1.23.0
-	github.com/glifio/go-pools v0.0.0-20230904034119-e659a0542cc1
+	github.com/glifio/go-pools v0.0.0-20231023164947-81738d5af9f2
 )
 
 require (

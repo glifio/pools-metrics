@@ -90,7 +90,7 @@ func AgentsLiquidAssets(ctx context.Context, sdk pooltypes.PoolsSDK, blockNumber
 
 	var data []struct {
 		TxHash  string         `json:"txHash"`
-		ID      string         `json:"id"`
+		ID      uint64         `json:"id"`
 		Address common.Address `json:"address"`
 		Height  *big.Int       `json:"height"`
 	}
